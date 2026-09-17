@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NextStep — decide what to do next</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#12141c;
+    --surface:#1a1d28;
+    --surface-2:#212533;
+    --line: rgba(237,238,242,0.09);
+    --text:#edeef2;
+    --text-dim:#8b90a3;
+    --signal:#f2b705;
+    --signal-dim:#7a6212;
+    --go:#4fc790;
+    --go-dim:#204a3a;
+    --err:#e2685b;
+    --radius: 3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Space Grotesk', sans-serif;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--signal); color:#1a1a1a; }
+  .wrap{
+    max-width:1080px;
+    margin:0 auto;
+    padding:0 24px 80px;
+  }
+  a{color:inherit;}
+  [hidden]{ display:none !important; }
+
+  /* ---- header ---- */
+  header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    padding:32px 0 20px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:44px;
+  }
+  .mark{
+    font-size:20px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .mark span{ color:var(--signal); }
+  .tag{
+    font-size:13px;
+    color:var(--text-dim);
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .header-right{
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+  .who{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--text-dim);
+  }
+  .who b{ color:var(--text); font-weight:500; }
+  .logout-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:7px 14px;
+    border-radius:999px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .logout-btn:hover{ color:var(--text); border-color:rgba(237,238,242,0.28); }
+
+  /* ---- auth screen ---- */
+  #view-auth{
+    display:flex;
+    justify-content:center;
+    padding-top:6vh;
+  }
+  .auth-card{
+    width:100%;
+    max-width:400px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:32px;
+  }
+  .auth-head{
+    text-align:left;
+    margin-bottom:26px;
+  }
+  .auth-head h1{
+    font-size:24px;
+    margin:0 0 8px;
+    font-weight:700;
+    letter-spacing:-0.01em;
+  }
+  .auth-head p{
+    font-size:14px;
+    color:var(--text-dim);
+    margin:0;
+  }
+  .tabs{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:3px;
+    margin-bottom:24px;
+  }
+  .tab-btn{
+    flex:1;
+    background:transparent;
+    border:none;
+    color:var(--text-dim);
+    padding:9px 0;
+    border-radius:999px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14px;
+    font-weight:500;
+    cursor:pointer;
+  }
+  .tab-btn.active{
+    background:var(--signal);
+    color:#181205;
+  }
+  .auth-form .field{ margin-bottom:14px; }
+  .auth-error{
+    background:rgba(226,104,91,0.12);
+    border:1px solid rgba(226,104,91,0.35);
+    color:var(--err);
+    font-size:13px;
+    padding:10px 12px;
+    border-radius:var(--radius);
+    margin-bottom:14px;
+  }
+  .auth-note{
+    font-size:12px;
+    color:var(--text-dim);
+    margin-top:16px;
+    line-height:1.5;
+  }
+
+  /* ---- hero / form ---- */
+  .hero h1{
+    font-size:clamp(30px, 4.2vw, 46px);
+    font-weight:700;
+    letter-spacing:-0.015em;
+    line-height:1.1;
+    max-width:14ch;
+    margin:0 0 14px;
+  }
+  .hero p.lead{
+    color:var(--text-dim);
+    font-size:16px;
+    max-width:52ch;
+    margin:0 0 36px;
+  }
+
+  .board{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:28px;
+    align-items:start;
+  }
+  @media (max-width:820px){
+    .board{ grid-template-columns:1fr; }
+  }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:26px;
+  }
+  .panel h2{
+    font-size:13px;
+    color:var(--text-dim);
+    font-weight:500;
+    margin:0 0 20px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+
+  .chip-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:22px;
+  }
+  .chip{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    padding:7px 14px;
+    border-radius:999px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:13.5px;
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .chip:hover{ color:var(--text); border-color: rgba(237,238,242,0.28); }
+  .chip.active{
+    color:var(--bg);
+    background:var(--signal);
+    border-color:var(--signal);
+    font-weight:500;
+  }
+
+  label{
+    display:block;
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-bottom:6px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  textarea, select, input[type=text], input[type=email], input[type=password]{
+    width:100%;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:var(--radius);
+    padding:11px 12px;
+    font-family:'Space Grotesk', sans-serif;
+    font-size:14.5px;
+    resize:vertical;
+  }
+  textarea:focus, select:focus, input:focus{
+    outline:2px solid var(--signal);
+    outline-offset:1px;
+  }
+  .field{ margin-bottom:16px; }
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+
+  .go-btn{
+    margin-top:6px;
+    width:100%;
+    background:var(--signal);
+    color:#181205;
+    border:none;
+    border-radius:var(--radius);
+    padding:13px 16px;
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    transition:filter .15s ease, transform .05s ease;
+  }
+  .go-btn:hover{ filter:brightness(1.08); }
+  .go-btn:active{ transform:translateY(1px); }
+  .go-btn:disabled{ opacity:.55; cursor:default; }
+
+  .hint{
+    font-size:12.5px;
+    color:var(--text-dim);
+    margin-top:10px;
+  }
+
+  /* ---- output / route ---- */
+  #output-panel{ min-height:280px; display:flex; flex-direction:column; }
+  .empty-state{
+    color:var(--text-dim);
+    font-size:14px;
+    margin:auto 0;
+    max-width:34ch;
+  }
+  .plan-summary{
+    font-size:15px;
+    color:var(--text-dim);
+    margin:-4px 0 22px;
+    padding-bottom:18px;
+    border-bottom:1px solid var(--line);
+  }
+  .route{
+    position:relative;
+    padding-left:30px;
+  }
+  .route svg.line{
+    position:absolute;
+    left:9px;
+    top:6px;
+    bottom:6px;
+    width:2px;
+    height:calc(100% - 12px);
+  }
+  .route-line-path{
+    stroke:var(--signal);
+    stroke-width:2;
+    fill:none;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: draw 0.9s ease forwards;
+  }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+  @media (prefers-reduced-motion: reduce){
+    .route-line-path{ animation:none; stroke-dashoffset:0; }
+  }
+
+  .step{
+    position:relative;
+    padding-bottom:26px;
+  }
+  .step:last-child{ padding-bottom:0; }
+  .step-dot{
+    position:absolute;
+    left:-30px;
+    top:2px;
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    background:var(--surface);
+    border:2px solid var(--signal);
+    color:var(--signal);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .step h3{
+    font-size:16px;
+    margin:0 0 4px;
+    font-weight:600;
+  }
+  .step p{
+    font-size:14px;
+    color:var(--text-dim);
+    margin:0 0 6px;
+  }
+  .step .mins{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--signal);
+  }
+
+  /* ---- daily challenge ---- */
+  .challenge{
+    margin-top:28px;
+    background:linear-gradient(180deg, var(--surface), var(--surface) 60%, var(--surface-2));
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:24px 26px;
+    display:flex;
+    align-items:center;
+    gap:22px;
+    flex-wrap:wrap;
+  }
+  .flame{
+    font-size:30px;
+    line-height:1;
+    filter: grayscale(1);
+    opacity:.4;
+    transition:filter .2s ease, opacity .2s ease;
+  }
+  .flame.lit{ filter:grayscale(0); opacity:1; }
+  .streak-num{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    color:var(--text-dim);
+    display:block;
+    margin-top:2px;
+  }
+  .streak-num b{ color:var(--text); }
+  .challenge-body{ flex:1; min-width:220px; }
+  .challenge-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color:var(--text-dim);
+    margin-bottom:5px;
+  }
+  .challenge-text{ font-size:15px; }
+  .done-btn{
+    background:transparent;
+    border:1px solid var(--go);
+    color:var(--go);
+    padding:10px 18px;
+    border-radius:var(--radius);
+    font-family:'Space Grotesk', sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .done-btn:hover{ background:rgba(79,199,144,0.1); }
+  .done-btn.done{
+    background:var(--go-dim);
+    border-color:var(--go-dim);
+    color:var(--go);
+    cursor:default;
+  }
+
+  .spinner{
+    width:16px; height:16px;
+    border:2px solid rgba(237,238,242,0.25);
+    border-top-color:var(--text);
+    border-radius:50%;
+    display:inline-block;
+    animation:spin .7s linear infinite;
+    vertical-align:middle;
+    margin-right:8px;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  footer{
+    margin-top:60px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    color:var(--text-dim);
+    font-size:12.5px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="mark">Next<span>Step</span></div>
+    <div class="header-right">
+      <span class="who" id="who-text" hidden></span>
+      <button class="logout-btn" id="logout-btn" hidden>Log out</button>
+      <span class="tag" id="tag-label">a decision helper</span>
+    </div>
+  </header>
+
+  <!-- ===================== AUTH VIEW ===================== -->
+  <div id="view-auth">
+    <div class="auth-card">
+      <div class="auth-head">
+        <h1 id="auth-title">Welcome back</h1>
+        <p id="auth-subtitle">Log in to pick up your streak and your plans.</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-login">Log in</button>
+        <button class="tab-btn" id="tab-register">Register</button>
+      </div>
+
+      <div id="auth-error" class="auth-error" hidden></div>
+
+      <!-- login form -->
+      <form class="auth-form" id="login-form">
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" autocomplete="current-password" required />
+        </div>
+        <button type="submit" class="go-btn">Log in</button>
+      </form>
+
+      <!-- register form -->
+      <form class="auth-form" id="register-form" hidden>
+        <div class="field">
+          <label for="reg-name">Name</label>
+          <input type="text" id="reg-name" autocomplete="name" required />
+        </div>
+        <div class="field">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" autocomplete="email" required />
+        </div>
+        <div class="field">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" autocomplete="new-password" required minlength="6" />
+        </div>
+        <div class="field">
+          <label for="reg-password2">Confirm password</label>
+          <input type="password" id="reg-password2" autocomplete="new-password" required minlength="6" />
+        </div>
+        <button type="submit" class="go-btn">Create account</button>
+      </form>
+
+      <div class="auth-note">Accounts are stored only in this browser, on this device — this is a working demo, not a hosted user database. Clearing your browser data will clear your accounts and streaks.</div>
+    </div>
+  </div>
+
+  <!-- ===================== APP VIEW ===================== -->
+  <div id="view-app" hidden>
+    <div class="hero">
+      <h1>Say what's stuck. Get three steps.</h1>
+      <p class="lead">Type the situation you're stuck on. NextStep turns it into a short, doable plan — no scrolling through advice you won't use.</p>
+    </div>
+
+    <div class="board">
+      <!-- input panel -->
+      <div class="panel">
+        <h2>YOUR SITUATION</h2>
+
+        <div class="chip-row" id="mode-chips">
+          <button class="chip active" data-mode="student" data-example="Exam in 5 days, 4 subjects, haven't started.">Student</button>
+          <button class="chip" data-mode="career" data-example="I know Java but don't know what to learn next.">Career</button>
+          <button class="chip" data-mode="freetime" data-example="I have 1 hour and want to improve myself.">Free time</button>
+          <button class="chip" data-mode="project" data-example="I need a mini-project for college.">Project</button>
+          <button class="chip" data-mode="other" data-example="">Something else</button>
+        </div>
+
+        <div class="field">
+          <label for="situation">What's going on?</label>
+          <textarea id="situation" rows="3" placeholder="Exam in 5 days, 4 subjects, haven't started."></textarea>
+        </div>
+
+        <div class="field">
+          <label for="goal">What does "done" look like?</label>
+          <input type="text" id="goal" placeholder="Feel ready to pass all 4 exams" />
+        </div>
+
+        <div class="field field-row">
+          <div>
+            <label for="time">Time you have</label>
+            <select id="time">
+              <option value="30 minutes">30 minutes</option>
+              <option value="1 hour" selected>1 hour</option>
+              <option value="3 hours">3 hours</option>
+              <option value="1 day">1 day</option>
+              <option value="5 days">5 days</option>
+              <option value="2+ weeks">2+ weeks</option>
+            </select>
+          </div>
+          <div>
+            <label for="energy">Energy level</label>
+            <select id="energy">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="priority">Priority</label>
+          <select id="priority">
+            <option value="speed">Get it done fast</option>
+            <option value="depth" selected>Actually learn it well</option>
+            <option value="balance">Balance both</option>
+          </select>
+        </div>
+
+        <button class="go-btn" id="generate-btn">Give me the plan</button>
+        <div class="hint">Three steps, sized to the time you actually have.</div>
+      </div>
+
+      <!-- output panel -->
+      <div class="panel" id="output-panel">
+        <h2>YOUR PLAN</h2>
+        <div id="output-content">
+          <div class="empty-state">Fill in your situation and press "Give me the plan." Your three steps will show up here.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- daily challenge -->
+    <div class="challenge">
+      <div class="flame" id="flame">🔥</div>
+      <div class="challenge-body">
+        <div class="challenge-label">TODAY'S CHALLENGE</div>
+        <div class="challenge-text" id="challenge-text">Loading…</div>
+        <span class="streak-num" id="streak-text"></span>
+      </div>
+      <button class="done-btn" id="done-btn">Mark done</button>
+    </div>
+  </div>
+
+  <footer id="page-footer" hidden>NextStep — plans generated on the spot, your account and streak live only in this browser.</footer>
+</div>
+
+<script>
+(function(){
+
+  /* =========================================================
+     Storage helpers
+     This is a published page: window.storage (chat-only) is not
+     available here. Per-viewer data lives in localStorage instead.
+  ========================================================= */
+  function lsGet(key){
+    try{
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : null;
+    } catch(e){ return null; }
+  }
+  function lsSet(key, value){
+    try{ localStorage.setItem(key, JSON.stringify(value)); }
+    catch(e){ /* storage unavailable — app still works, just won't persist */ }
+  }
+  function lsRemove(key){
+    try{ localStorage.removeItem(key); } catch(e){}
+  }
+
+  const USERS_KEY = 'nextstep-users';
+  const SESSION_KEY = 'nextstep-session';
+
+  function getUsers(){ return lsGet(USERS_KEY) || []; }
+  function saveUsers(users){ lsSet(USERS_KEY, users); }
+
+  async function hashPassword(password){
+    try{
+      const enc = new TextEncoder().encode(password);
+      const buf = await crypto.subtle.digest('SHA-256', enc);
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    } catch(e){
+      // fallback if subtlecrypto isn't available for some reason
+      let h = 0;
+      for(let i=0;i<password.length;i++){ h = ((h<<5)-h) + password.charCodeAt(i); h |= 0; }
+      return 'fallback' + h;
+    }
+  }
+
+  function userKey(email, suffix){
+    return 'nextstep:' + email.toLowerCase() + ':' + suffix;
+  }
+
+  /* =========================================================
+     Auth view logic
+  ========================================================= */
+  const viewAuth = document.getElementById('view-auth');
+  const viewApp = document.getElementById('view-app');
+  const pageFooter = document.getElementById('page-footer');
+  const tagLabel = document.getElementById('tag-label');
+  const whoText = document.getElementById('who-text');
+  const logoutBtn = document.getElementById('logout-btn');
+
+  const tabLogin = document.getElementById('tab-login');
+  const tabRegister = document.getElementById('tab-register');
+  const loginForm = document.getElementById('login-form');
+  const registerForm = document.getElementById('register-form');
+  const authTitle = document.getElementById('auth-title');
+  const authSubtitle = document.getElementById('auth-subtitle');
+  const authError = document.getElementById('auth-error');
+
+  function showError(msg){
+    authError.textContent = msg;
+    authError.hidden = false;
+  }
+  function clearError(){
+    authError.hidden = true;
+    authError.textContent = '';
+  }
+
+  tabLogin.addEventListener('click', ()=>{
+    tabLogin.classList.add('active');
+    tabRegister.classList.remove('active');
+    loginForm.hidden = false;
+    registerForm.hidden = true;
+    authTitle.textContent = 'Welcome back';
+    authSubtitle.textContent = 'Log in to pick up your streak and your plans.';
+    clearError();
+  });
+  tabRegister.addEventListener('click', ()=>{
+    tabRegister.classList.add('active');
+    tabLogin.classList.remove('active');
+    registerForm.hidden = false;
+    loginForm.hidden = true;
+    authTitle.textContent = 'Create your account';
+    authSubtitle.textContent = 'One minute, then straight to your plan.';
+    clearError();
+  });
+
+  registerForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    clearError();
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim().toLowerCase();
+    const pw = document.getElementById('reg-password').value;
+    const pw2 = document.getElementById('reg-password2').value;
+
+    if(!name || !email){ showError('Fill in your name and email.'); return; }
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ showError('That email address doesn\'t look right.'); return; }
+    if(pw.length < 6){ showError('Password needs to be at least 6 characters.'); return; }
+    if(pw !== pw2){ showError('Passwords don\'t match.'); return; }
+
+    const users = getUsers();
+    if(users.some(u => u.email === email)){
+      showError('An account with that email already exists — try logging in instead.');
+      return;
+    }
+
+    const passHash = await hashPassword(pw);
+    users.push({ name, email, passHash });
+    saveUsers(users);
+    lsSet(SESSION_KEY, email);
+    enterApp(email, name);
+  });
+
+  loginForm.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    clearError();
+    const email = document.getElementById('login-email').value.trim().toLowerCase();
+    const pw = document.getElementById('login-password').value;
+
+    const users = getUsers();
+    const user = users.find(u => u.email === email);
+    if(!user){ showError('No account with that email — try registering instead.'); return; }
+
+    const passHash = await hashPassword(pw);
+    if(passHash !== user.passHash){ showError('Wrong password.'); return; }
+
+    lsSet(SESSION_KEY, email);
+    enterApp(email, user.name);
+  });
+
+  logoutBtn.addEventListener('click', ()=>{
+    lsRemove(SESSION_KEY);
+    viewApp.hidden = true;
+    pageFooter.hidden = true;
+    whoText.hidden = true;
+    logoutBtn.hidden = true;
+    tagLabel.hidden = false;
+    viewAuth.hidden = false;
+    loginForm.reset();
+    registerForm.reset();
+    clearError();
+  });
+
+  let currentUserEmail = null;
+
+  function enterApp(email, name){
+    currentUserEmail = email;
+    viewAuth.hidden = true;
+    viewApp.hidden = false;
+    pageFooter.hidden = false;
+    tagLabel.hidden = true;
+    whoText.hidden = false;
+    logoutBtn.hidden = false;
+    whoText.innerHTML = 'Hi, <b>' + escapeHtml(name || email) + '</b>';
+    initChallenge();
+  }
+
+  /* =========================================================
+     Mode chips
+  ========================================================= */
+  const chips = document.querySelectorAll('#mode-chips .chip');
+  const situationEl = document.getElementById('situation');
+  chips.forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      chips.forEach(c=>c.classList.remove('active'));
+      chip.classList.add('active');
+      const example = chip.getAttribute('data-example');
+      situationEl.placeholder = example || "Tell me what's confusing you right now.";
+    });
+  });
+
+  /* =========================================================
+     Claude API helper
+  ========================================================= */
+  async function askClaude(promptText){
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: promptText }]
+      })
+    });
+    if(!response.ok) throw new Error("API error " + response.status);
+    const data = await response.json();
+    const text = (data.content || [])
+      .filter(b => b.type === "text")
+      .map(b => b.text)
+      .join("\n");
+    if(!text) throw new Error("empty response");
+    return text;
+  }
+
+  function parseJSON(text){
+    const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+    return JSON.parse(cleaned);
+  }
+
+  /* =========================================================
+     Local fallback plan generator
+  ========================================================= */
+  function localPlan({situation, goal, time, energy, priority}){
+    const s = (situation + " " + goal).toLowerCase();
+    const isExam = /exam|test|quiz|subject|syllabus/.test(s);
+    const isCareer = /learn|java|python|framework|language|skill|stack|next\b/.test(s) && !isExam;
+    const isProject = /project|build|mini.?project|portfolio/.test(s);
+
+    const speedNote = priority === "speed" ? "Move fast, skip polishing." :
+                       priority === "depth" ? "Take the extra minute to actually understand it, not just finish it." :
+                       "Keep a steady pace — don't rush, don't linger.";
+
+    if(isExam){
+      return {
+        summary: "A tight run at the exams, weakest subject first while your head is freshest.",
+        steps: [
+          { title: "Rank your subjects by fear", detail: "List all 4 subjects. Put the one you dread most at the top — that's what you tackle first, before fatigue sets in.", minutes: 15 },
+          { title: "One pass, one subject, active recall", detail: "Skim your weakest subject's syllabus, then close the book and write down everything you remember. Check what you missed.", minutes: time.includes("5 day") ? 90 : 40 },
+          { title: "Solve, don't just read", detail: "Do past questions or practice problems for that subject. " + speedNote, minutes: 30 }
+        ]
+      };
+    }
+    if(isCareer){
+      return {
+        summary: "A next step that builds on what you already know instead of starting over.",
+        steps: [
+          { title: "Pick one direction, not five", detail: "Choose a single lane that extends your current skill (e.g. a framework, a database, or a testing tool) instead of browsing every option.", minutes: 15 },
+          { title: "Learn just enough to build", detail: "Find one focused tutorial or doc section — skip full courses for now. " + speedNote, minutes: 45 },
+          { title: "Ship a tiny project with it", detail: "Build something small that forces you to use the new skill for real, even if it's rough.", minutes: energy === "low" ? 30 : 60 }
+        ]
+      };
+    }
+    if(isProject){
+      return {
+        summary: "A project sized to fit the time you actually have, not the one that sounds most impressive.",
+        steps: [
+          { title: "Set the scope in one sentence", detail: "Write one sentence describing what your project does. If it takes two sentences, it's too big — cut it down.", minutes: 15 },
+          { title: "Build the ugly working version", detail: "Get the core feature working end to end, no styling, no extras. " + speedNote, minutes: 90 },
+          { title: "Polish only what a viewer sees first", detail: "Clean up just the entry point — a README, a title screen, or the first screen a professor sees.", minutes: 30 }
+        ]
+      };
+    }
+    return {
+      summary: "A short, useful block that leaves you better off than when you started.",
+      steps: [
+        { title: "Name the one thing", detail: "Pick a single skill, task, or habit to focus on for this block — not three things at once.", minutes: 5 },
+        { title: "Do the focused work", detail: goal ? ("Work directly toward: " + goal + ". " + speedNote) : "Spend the bulk of your time actually doing the thing, not planning it.", minutes: energy === "low" ? 20 : 40 },
+        { title: "Close the loop", detail: "Write one line about what you did and what's next, so future-you doesn't have to start from zero.", minutes: 5 }
+      ]
+    };
+  }
+
+  /* =========================================================
+     Plan generation flow
+  ========================================================= */
+  const generateBtn = document.getElementById('generate-btn');
+  const outputContent = document.getElementById('output-content');
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.innerText = str == null ? '' : String(str);
+    return d.innerHTML;
+  }
+
+  function renderPlan(plan){
+    const steps = plan.steps.slice(0,3);
+    const stepsHtml = steps.map((st, i)=>`
+      <div class="step">
+        <div class="step-dot">${i+1}</div>
+        <h3>${escapeHtml(st.title)}</h3>
+        <p>${escapeHtml(st.detail)}</p>
+        <span class="mins">${st.minutes ? st.minutes + ' min' : ''}</span>
+      </div>
+    `).join('');
+
+    outputContent.innerHTML = `
+      <div class="plan-summary">${escapeHtml(plan.summary || '')}</div>
+      <div class="route">
+        <svg class="line" viewBox="0 0 2 100" preserveAspectRatio="none">
+          <path class="route-line-path" d="M1,0 L1,100" pathLength="400"></path>
+        </svg>
+        ${stepsHtml}
+      </div>
+    `;
+  }
+
+  async function generatePlan(){
+    const situation = situationEl.value.trim() || situationEl.placeholder;
+    const goal = document.getElementById('goal').value.trim();
+    const time = document.getElementById('time').value;
+    const energy = document.getElementById('energy').value;
+    const priority = document.getElementById('priority').value;
+
+    generateBtn.disabled = true;
+    generateBtn.innerHTML = '<span class="spinner"></span>Working it out…';
+    outputContent.innerHTML = '<div class="empty-state">Thinking through your situation…</div>';
+
+    const promptText = `You are NextStep, a decision-clarity tool. A user is stuck and needs a short action plan.
+
+Situation: ${situation}
+Their goal / definition of done: ${goal || "not specified"}
+Time available: ${time}
+Energy level: ${energy}
+Priority: ${priority}
+
+Respond with ONLY a raw JSON object, no markdown fences, no commentary, in exactly this shape:
+{"summary": "one sentence describing the overall plan", "steps": [{"title":"short step title","detail":"one to two sentence instruction, concrete and specific to their situation","minutes": number_of_minutes}, ... exactly 3 steps]}
+The three steps must add up to roughly the time available, be realistic for the stated energy level, and reflect the stated priority.`;
+
+    let plan;
+    try{
+      const raw = await askClaude(promptText);
+      plan = parseJSON(raw);
+      if(!plan.steps || plan.steps.length < 1) throw new Error("bad shape");
+    } catch(err){
+      plan = localPlan({situation, goal, time, energy, priority});
+    }
+
+    renderPlan(plan);
+
+    generateBtn.disabled = false;
+    generateBtn.textContent = 'Give me the plan';
+
+    if(currentUserEmail){
+      lsSet(userKey(currentUserEmail, 'profile'), { situation, goal });
+    }
+  }
+
+  generateBtn.addEventListener('click', generatePlan);
+
+  /* =========================================================
+     Daily challenge + streak (per logged-in user)
+  ========================================================= */
+  const FALLBACK_CHALLENGES = [
+    "Learn one new concept in your main subject and solve 2 problems with it.",
+    "Write down 3 things you're avoiding, then do the smallest one right now.",
+    "Read one article outside your comfort zone and summarize it in 3 lines.",
+    "Fix one small annoyance in something you use daily.",
+    "Teach one thing you learned this week to someone else, out loud.",
+    "Clean up and organize one messy folder, inbox, or notebook.",
+    "Do 15 minutes of focused practice on your weakest skill.",
+    "Write the first paragraph of something you've been putting off.",
+    "Find one person doing what you want to do and read about their path.",
+    "Rebuild one small thing from scratch without looking anything up.",
+    "Ask one question you've been afraid to ask.",
+    "Spend 20 minutes reviewing something you learned last month.",
+    "Sketch out a rough plan for a project idea you've been sitting on.",
+    "Do one thing today that your future self will thank you for."
+  ];
+
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function yesterdayStr(){
+    const d = new Date();
+    d.setDate(d.getDate()-1);
+    return d.toISOString().slice(0,10);
+  }
+  function dayOfYear(){
+    const now = new Date();
+    const start = new Date(now.getFullYear(), 0, 0);
+    return Math.floor((now - start) / (1000*60*60*24));
+  }
+
+  function getProfile(){
+    if(!currentUserEmail) return null;
+    return lsGet(userKey(currentUserEmail, 'profile'));
+  }
+
+  async function generateChallengeText(){
+    const profile = getProfile();
+    const context = profile && profile.situation ? profile.situation : "general self-improvement";
+    try{
+      const raw = await askClaude(`Give a single personalized 10-30 minute daily challenge for someone whose recent focus was: "${context}". Respond with ONLY the challenge sentence, no quotes, no preamble, imperative mood, one sentence.`);
+      const cleaned = raw.replace(/^["']|["']$/g, '').trim();
+      if(cleaned.length > 0 && cleaned.length < 220) return cleaned;
+      throw new Error("bad shape");
+    } catch(e){
+      return FALLBACK_CHALLENGES[dayOfYear() % FALLBACK_CHALLENGES.length];
+    }
+  }
+
+  function loadStreakData(){
+    if(!currentUserEmail) return { current: 0, longest: 0, lastDate: null };
+    return lsGet(userKey(currentUserEmail, 'streak-data')) || { current: 0, longest: 0, lastDate: null };
+  }
+  function saveStreakData(data){
+    if(!currentUserEmail) return;
+    lsSet(userKey(currentUserEmail, 'streak-data'), data);
+  }
+
+  async function loadTodayChallenge(){
+    const key = userKey(currentUserEmail, 'challenge:' + todayStr());
+    const existing = lsGet(key);
+    if(existing) return existing;
+
+    const text = await generateChallengeText();
+    const entry = { text, completed: false };
+    lsSet(key, entry);
+    return entry;
+  }
+
+  const challengeTextEl = document.getElementById('challenge-text');
+  const doneBtn = document.getElementById('done-btn');
+  const streakTextEl = document.getElementById('streak-text');
+  const flameEl = document.getElementById('flame');
+
+  function renderStreak(streakData, completedToday){
+    streakTextEl.innerHTML = `<b>${streakData.current}</b> day streak · best <b>${streakData.longest}</b>`;
+    flameEl.classList.toggle('lit', completedToday || streakData.current > 0);
+  }
+
+  let challengeHandlerBound = false;
+
+  async function initChallenge(){
+    challengeTextEl.textContent = 'Loading…';
+    doneBtn.disabled = false;
+    doneBtn.classList.remove('done');
+    doneBtn.textContent = 'Mark done';
+
+    const challenge = await loadTodayChallenge();
+    const streakData = loadStreakData();
+    challengeTextEl.textContent = challenge.text;
+    renderStreak(streakData, challenge.completed);
+
+    if(challenge.completed){
+      doneBtn.textContent = 'Done today ✓';
+      doneBtn.classList.add('done');
+    }
+
+    if(!challengeHandlerBound){
+      challengeHandlerBound = true;
+      doneBtn.addEventListener('click', ()=>{
+        if(doneBtn.classList.contains('done') || !currentUserEmail) return;
+        doneBtn.disabled = true;
+
+        const key = userKey(currentUserEmail, 'challenge:' + todayStr());
+        const current = lsGet(key) || { text: challengeTextEl.textContent, completed: false };
+        current.completed = true;
+        lsSet(key, current);
+
+        let sd = loadStreakData();
+        const today = todayStr();
+        if(sd.lastDate === yesterdayStr()){
+          sd.current += 1;
+        } else if(sd.lastDate !== today){
+          sd.current = 1;
+        }
+        sd.lastDate = today;
+        sd.longest = Math.max(sd.longest || 0, sd.current);
+        saveStreakData(sd);
+
+        renderStreak(sd, true);
+        doneBtn.textContent = 'Done today ✓';
+        doneBtn.classList.add('done');
+        doneBtn.disabled = false;
+      });
+    }
+  }
+
+  /* =========================================================
+     Resume session on load
+  ========================================================= */
+  const session = lsGet(SESSION_KEY);
+  if(session){
+    const users = getUsers();
+    const user = users.find(u => u.email === session);
+    if(user){
+      enterApp(user.email, user.name);
+    }
+  }
+
+})();
+</script>
+</body>
+</html>
